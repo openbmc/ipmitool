@@ -60,6 +60,7 @@ xenable_intf_bmc=no
 xenable_intf_imb=yes
 xenable_intf_open=yes
 xenable_intf_usb=yes
+xenable_intf_dbus=yes
 xenable_intf_lipmi=yes
 #xenable_intf_serial=yes
 xenable_intf_dummy=no
@@ -212,6 +213,22 @@ if test "x$xenable_intf_usb" = "xyes"; then
 	AC_SUBST(INTF_USB, [usb])
 	AC_SUBST(INTF_USB_LIB, [libintf_usb.la])
 	IPMITOOL_INTF_LIB="$IPMITOOL_INTF_LIB usb/libintf_usb.la"
+fi
+
+dnl enable IPMI dbus interface
+AC_ARG_ENABLE([intf-dbus],
+	[AC_HELP_STRING([--enable-intf-dbus],
+			[enable IPMI dbus interface [default=yes]])],
+		[xenable_intf_dbus=$enableval],
+		[xenable_intf_dbus=yes])
+if test "x$xenable_intf_dbus" = "xstatic" || test "x$xenable_intf_dbus" = "xplugin"; then
+   xenable_intf_dbus=yes
+fi
+if test "x$xenable_intf_dbus" = "xyes"; then
+	AC_DEFINE(IPMI_INTF_DBUS, [1], [Define to 1 to enable dbus interface.])
+	AC_SUBST(INTF_DBUS, [dbus])
+	AC_SUBST(INTF_DBUS_LIB, [libintf_dbus.la])
+	IPMITOOL_INTF_LIB="$IPMITOOL_INTF_LIB dbus/libintf_dbus.la"
 fi
 
 dnl enable IPMIv2.0 RMCP+ LAN interface
@@ -656,6 +673,7 @@ AC_CONFIG_FILES([Makefile
 		src/plugins/imb/Makefile
 		src/plugins/bmc/Makefile
 		src/plugins/usb/Makefile
+		src/plugins/dbus/Makefile
 		src/plugins/lipmi/Makefile
 		src/plugins/serial/Makefile
 		src/plugins/dummy/Makefile])
@@ -673,6 +691,7 @@ AC_MSG_RESULT([  free    : $xenable_intf_free])
 AC_MSG_RESULT([  imb     : $xenable_intf_imb])
 AC_MSG_RESULT([  bmc     : $xenable_intf_bmc])
 AC_MSG_RESULT([  usb     : $xenable_intf_usb])
+AC_MSG_RESULT([  dbus    : $xenable_intf_dbus])
 AC_MSG_RESULT([  lipmi   : $xenable_intf_lipmi])
 AC_MSG_RESULT([  serial  : $xenable_intf_serial])
 AC_MSG_RESULT([  dummy   : $xenable_intf_dummy])
