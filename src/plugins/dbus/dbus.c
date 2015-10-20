@@ -74,9 +74,10 @@ static struct ipmi_rs *ipmi_dbus_sendrecv(struct ipmi_intf *intf,
 		goto out;
 	}
 
-	rc = sd_bus_message_append(msg, "yyy",
+	rc = sd_bus_message_append(msg, "yyyy",
 			++seq,
-			req->msg.netfn << 2 | req->msg.lun,
+			req->msg.netfn,
+			req->msg.lun,
 			req->msg.cmd);
 	if (rc < 0) {
 		lprintf(LOG_ERR, "%s: failed to init bytes\n", __func__);
@@ -111,7 +112,7 @@ out:
 static int ipmi_dbus_method_send_message(sd_bus_message *msg, void *userdata,
 		sd_bus_error *error)
 {
-	uint8_t recv_seq, recv_netfn, recv_cmd;
+	uint8_t recv_seq, recv_netfn, recv_lun, recv_cmd, recv_cc;
 	const void *data;
 	size_t n;
 	int rc;
@@ -119,7 +120,8 @@ static int ipmi_dbus_method_send_message(sd_bus_message *msg, void *userdata,
 	(void)userdata;
 	(void)error;
 
-	rc = sd_bus_message_read(msg, "yyy", &recv_seq, &recv_netfn, &recv_cmd);
+	rc = sd_bus_message_read(msg, "yyyyy", &recv_seq, &recv_netfn,
+			&recv_lun, &recv_cmd, &recv_cc);
 	if (rc < 0) {
 		lprintf(LOG_ERR, "%s: failed to read reply\n", __func__);
 		goto out;
@@ -131,20 +133,15 @@ static int ipmi_dbus_method_send_message(sd_bus_message *msg, void *userdata,
 		goto out;
 	}
 
-	if (n > sizeof(rsp.data) + 1) {
+	if (n > sizeof(rsp.data)) {
 		lprintf(LOG_ERR, "%s: data too long!\n", __func__);
 		goto out;
 	}
 
-	if (n < 1) {
-		lprintf(LOG_ERR, "%s: data too short\n", __func__);
-		goto out;
-	}
-
 	if (recv_seq == seq) {
-		rsp.ccode = *(uint8_t *)(data);
-		rsp.data_len = n - 1;
-		memcpy(rsp.data, data + 1, rsp.data_len);
+		rsp.ccode = rsp.ccode
+		rsp.data_len = n;
+		memcpy(rsp.data, data, rsp.data_len);
 		reply_received = true;
 	}
 
@@ -155,8 +152,8 @@ out:
 
 static const sd_bus_vtable dbus_vtable[] = {
 	SD_BUS_VTABLE_START(0),
-	SD_BUS_SIGNAL("ReceivedMessage", "yyyay", 0),
-	SD_BUS_METHOD("sendMessage", "yyyay", "x",
+	SD_BUS_SIGNAL("ReceivedMessage", "yyyyay", 0),
+	SD_BUS_METHOD("sendMessage", "yyyyyay", "x",
 			ipmi_dbus_method_send_message,
 			SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END
