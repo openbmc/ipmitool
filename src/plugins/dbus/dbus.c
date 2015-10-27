@@ -164,7 +164,7 @@ static int ipmi_dbus_setup(struct ipmi_intf *intf)
 	const char *name;
 	int rc;
 
-	rc = sd_bus_default_user(&bus);
+	rc = sd_bus_default(&bus);
 	if (rc < 0) {
 		lprintf(LOG_ERR, "Can't connect to session bus: %s\n",
 				strerror(-rc));
