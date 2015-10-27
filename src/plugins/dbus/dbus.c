@@ -139,7 +139,7 @@ static int ipmi_dbus_method_send_message(sd_bus_message *msg, void *userdata,
 	}
 
 	if (recv_seq == seq) {
-		rsp.ccode = rsp.ccode;
+		rsp.ccode = recv_cc;
 		rsp.data_len = n;
 		memcpy(rsp.data, data, rsp.data_len);
 		reply_received = true;
